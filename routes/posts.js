@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
+const jwt = require('jsonwebtoken');
 
 
 
@@ -13,19 +14,44 @@ router.get('/', async (req,res) => {
     }
 });
 
-router.post('/', (req, res) =>{
-    const post = new Post({
-        title: req.body.title,
-        description: req.body.description
+router.post('/login', (req, res) => {
+    // Mock user
+    const user = {
+      id: 1, 
+      username: 'bosun',
+      email: 'bosundare@gmail.com'
+    }
+  
+    jwt.sign({user}, 'secretkey', { expiresIn: '500s' }, (err, token) => {
+      res.json({
+        token
+      });
     });
+  });
 
-    post.save()
-        .then(data => {
-            res.json(data);
-        })
-        .catch(err => {
-            res.json({ message: err});
-        });
+router.post('/', verifyToken, (req, res) =>{
+    jwt.verify(req.token, 'secretkey', (err, authData)=> {
+        if(err) {
+            res.sendStatus(403);
+        }else {
+            const post = new Post({
+                title: req.body.title,
+                description: req.body.description
+            });
+        
+            post.save()
+                .then(data => {
+                    res.json(data),
+                    authData
+                    
+                })
+                .catch(err => {
+                    res.json({ message: err});
+                });
+        }
+    })
+    
+    
 });
 
 //Get a specific post
@@ -63,5 +89,25 @@ router.patch('/:postId', async (req,res)=>{
         res.json({ message: err});
     }
 });
+
+function verifyToken(req, res, next) {
+    // Get auth header value
+    const bearerHeader = req.headers['authorization'];
+    // Check if bearer is undefined
+    if(typeof bearerHeader !== 'undefined') {
+      // Split at the space
+      const bearer = bearerHeader.split(' ');
+      // Get token from array
+      const bearerToken = bearer[1];
+      // Set the token
+      req.token = bearerToken;
+      // Next middleware
+      next();
+    } else {
+      // Forbidden
+      res.sendStatus(403);
+    }
+  
+  }
 
 module.exports = router;

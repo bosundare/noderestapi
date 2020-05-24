@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const config = require('./config/database.js');
 const bodyParser = require('body-parser');
+
+const jwt = require('jsonwebtoken');
 const app = express();
 const cors = require('cors');
 app.use(cors());
@@ -18,8 +20,10 @@ app.use(bodyParser.json());
 const postsRoute = require('./routes/posts');
 app.use('/posts', postsRoute);
 
-app.get('/', (req, res)=> {
-    res.send("Thanks")
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to the API'
+  });
 });
 
 
